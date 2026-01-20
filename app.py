@@ -83,7 +83,7 @@ def get_url_label(url: str, max_length: int = 40) -> str:
     
     return label
 
-def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_by_url: dict, seed_url: str, layout: str = "hierarchical"):
+def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_by_url: dict, seed_url: str, layout: str = "force"):
     """Build an interactive network graph using pyvis"""
     net = Network(
         height="800px",
@@ -94,71 +94,24 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
     )
     
     # Different layout configurations
-    if layout == "hierarchical":
-        net.set_options("""
-        {
-            "layout": {
-                "hierarchical": {
-                    "enabled": true,
-                    "levelSeparation": 150,
-                    "nodeSpacing": 200,
-                    "treeSpacing": 250,
-                    "direction": "UD",
-                    "sortMethod": "directed"
-                }
-            },
-            "physics": {
-                "enabled": false
-            },
-            "nodes": {
-                "font": {
-                    "size": 12,
-                    "face": "arial"
-                },
-                "borderWidth": 2
-            },
-            "edges": {
-                "smooth": {
-                    "type": "cubicBezier",
-                    "forceDirection": "vertical",
-                    "roundness": 0.4
-                },
-                "arrows": {
-                    "to": {
-                        "enabled": true,
-                        "scaleFactor": 0.5
-                    }
-                },
-                "color": {
-                    "color": "#848484",
-                    "highlight": "#FF0000",
-                    "opacity": 0.6
-                }
-            },
-            "interaction": {
-                "hover": true,
-                "tooltipDelay": 100,
-                "navigationButtons": true,
-                "keyboard": true
-            }
-        }
-        """)
-    else:  # physics-based layout
+    if layout == "radial":
+        # Radial/circular layout - seed in center, pages spread around
         net.set_options("""
         {
             "physics": {
                 "enabled": true,
                 "stabilization": {
                     "enabled": true,
-                    "iterations": 500
+                    "iterations": 1000,
+                    "updateInterval": 50
                 },
                 "barnesHut": {
-                    "gravitationalConstant": -30000,
-                    "centralGravity": 0.8,
-                    "springLength": 250,
-                    "springConstant": 0.001,
-                    "damping": 0.3,
-                    "avoidOverlap": 0.8
+                    "gravitationalConstant": -10000,
+                    "centralGravity": 0.3,
+                    "springLength": 200,
+                    "springConstant": 0.05,
+                    "damping": 0.5,
+                    "avoidOverlap": 0.2
                 }
             },
             "nodes": {
@@ -166,7 +119,115 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
                     "size": 11,
                     "face": "arial"
                 },
-                "borderWidth": 2
+                "borderWidth": 2,
+                "shape": "dot"
+            },
+            "edges": {
+                "smooth": {
+                    "type": "continuous",
+                    "roundness": 0.5
+                },
+                "arrows": {
+                    "to": {
+                        "enabled": true,
+                        "scaleFactor": 0.4
+                    }
+                },
+                "color": {
+                    "color": "#999999",
+                    "opacity": 0.3
+                },
+                "width": 1
+            },
+            "interaction": {
+                "hover": true,
+                "tooltipDelay": 100,
+                "navigationButtons": true,
+                "keyboard": true,
+                "zoomView": true,
+                "dragView": true
+            }
+        }
+        """)
+    elif layout == "clustered":
+        # Clustered force layout - groups related pages
+        net.set_options("""
+        {
+            "physics": {
+                "enabled": true,
+                "stabilization": {
+                    "enabled": true,
+                    "iterations": 2000
+                },
+                "forceAtlas2Based": {
+                    "gravitationalConstant": -50,
+                    "centralGravity": 0.01,
+                    "springLength": 150,
+                    "springConstant": 0.08,
+                    "damping": 0.4,
+                    "avoidOverlap": 0.5
+                },
+                "solver": "forceAtlas2Based"
+            },
+            "nodes": {
+                "font": {
+                    "size": 10,
+                    "face": "arial"
+                },
+                "borderWidth": 2,
+                "shape": "dot"
+            },
+            "edges": {
+                "smooth": {
+                    "type": "continuous"
+                },
+                "arrows": {
+                    "to": {
+                        "enabled": true,
+                        "scaleFactor": 0.4
+                    }
+                },
+                "color": {
+                    "color": "#cccccc",
+                    "opacity": 0.4
+                },
+                "width": 0.5
+            },
+            "interaction": {
+                "hover": true,
+                "tooltipDelay": 100,
+                "navigationButtons": true,
+                "hideEdgesOnDrag": true,
+                "hideEdgesOnZoom": true
+            }
+        }
+        """)
+    else:  # "force" - balanced force-directed
+        net.set_options("""
+        {
+            "physics": {
+                "enabled": true,
+                "stabilization": {
+                    "enabled": true,
+                    "iterations": 1500,
+                    "updateInterval": 25
+                },
+                "barnesHut": {
+                    "gravitationalConstant": -15000,
+                    "centralGravity": 0.1,
+                    "springLength": 180,
+                    "springConstant": 0.04,
+                    "damping": 0.4,
+                    "avoidOverlap": 0.3
+                }
+            },
+            "nodes": {
+                "font": {
+                    "size": 10,
+                    "face": "arial"
+                },
+                "borderWidth": 2,
+                "shape": "dot"
             },
             "edges": {
                 "smooth": {
@@ -179,25 +240,35 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
                     }
                 },
                 "color": {
-                    "color": "#848484",
-                    "opacity": 0.5
-                }
+                    "color": "#999999",
+                    "opacity": 0.4
+                },
+                "width": 1
             },
             "interaction": {
                 "hover": true,
                 "tooltipDelay": 100,
-                "hideEdgesOnDrag": true,
-                "hideEdgesOnZoom": true,
-                "navigationButtons": true
+                "navigationButtons": true,
+                "keyboard": true
             }
         }
         """)
     
-    # Calculate node levels/depths for sizing
-    node_depths = {}
+    # Calculate node metrics
     node_set = set(nodes)
     
-    # BFS to calculate depths
+    # Count incoming and outgoing links for each node
+    outgoing = {n: 0 for n in nodes}
+    incoming = {n: 0 for n in nodes}
+    
+    for source, target in edges:
+        if source in node_set:
+            outgoing[source] = outgoing.get(source, 0) + 1
+        if target in node_set:
+            incoming[target] = incoming.get(target, 0) + 1
+    
+    # Calculate depth from seed (for coloring)
+    node_depths = {}
     from collections import deque
     q = deque([(seed_url, 0)])
     visited_depth = {seed_url: 0}
@@ -210,11 +281,14 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
                 visited_depth[target] = depth + 1
                 q.append((target, depth + 1))
     
-    # Add nodes with colors based on status
+    # Add nodes with sizing based on importance (links)
     for url in nodes:
         status = status_by_url.get(url)
-        label = get_url_label(url)
+        label = get_url_label(url, max_length=35)
         depth = node_depths.get(url, 0)
+        
+        # Calculate importance: total connections
+        importance = incoming.get(url, 0) + outgoing.get(url, 0)
         
         # Color based on HTTP status
         if status == 200:
@@ -228,24 +302,26 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
         else:
             color = "#9E9E9E"  # Gray for unknown
         
-        # Seed URL is larger
-        size = 35 if url == seed_url else max(15, 25 - depth * 2)
+        # Size based on importance - seed is largest, then by connection count
+        if url == seed_url:
+            size = 40
+        else:
+            size = min(35, 15 + importance * 2)
         
-        title = f"{url}\nStatus: {status if status else 'N/A'}\nDepth: {depth}"
+        title = f"{url}\nStatus: {status if status else 'N/A'}\nDepth: {depth}\nLinks In: {incoming.get(url, 0)} | Out: {outgoing.get(url, 0)}"
         
         net.add_node(
             url,
             label=label,
             title=title,
             color=color,
-            size=size,
-            level=depth if layout == "hierarchical" else None
+            size=size
         )
     
-    # Add edges (only if both nodes exist)
+    # Add edges with width based on importance
     for source, target in edges:
         if source in node_set and target in node_set:
-            net.add_edge(source, target)
+            net.add_edge(source, target, width=1)
     
     return net
 
@@ -324,7 +400,7 @@ with col2:
 with col3:
     max_depth = st.number_input("Max depth", min_value=0, max_value=20, value=3, step=1)
 with col4:
-    layout_type = st.selectbox("Layout", ["hierarchical", "physics"], index=0)
+    layout_type = st.selectbox("Layout", ["force", "radial", "clustered"], index=0)
 
 run = st.button("🚀 Crawl & Build Network Graph", use_container_width=True)
 
@@ -389,10 +465,12 @@ if run:
     ⚪ Gray = Unknown
     """)
     
-    if layout_type == "hierarchical":
-        st.info("💡 **Hierarchical Layout:** Top-down tree structure. Pages flow from seed URL downward. No jiggling!")
+    if layout_type == "force":
+        st.info("💡 **Force-Directed:** Balanced map view. Nodes with more connections are larger. Shows the actual web structure!")
+    elif layout_type == "radial":
+        st.info("💡 **Radial Layout:** Seed URL in center, pages radiate outward. Great for seeing site depth at a glance.")
     else:
-        st.info("💡 **Physics Layout:** Force-directed graph. Click and drag nodes to reorganize. Graph will stabilize after a few seconds.")
+        st.info("💡 **Clustered Layout:** Pages naturally group by similarity. Best for complex sites with many interconnections.")
     
     with st.spinner("Building network graph..."):
         net = build_network_graph(nodes, edges_list, status_by_url, seed, layout_type)
