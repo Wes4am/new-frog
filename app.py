@@ -83,54 +83,138 @@ def get_url_label(url: str, max_length: int = 40) -> str:
     
     return label
 
-def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_by_url: dict):
+def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_by_url: dict, seed_url: str, layout: str = "hierarchical"):
     """Build an interactive network graph using pyvis"""
     net = Network(
-        height="700px",
+        height="800px",
         width="100%",
         bgcolor="#ffffff",
         font_color="#000000",
         directed=True
     )
     
-    # Configure physics for better layout
-    net.set_options("""
-    {
-        "physics": {
-            "enabled": true,
-            "barnesHut": {
-                "gravitationalConstant": -8000,
-                "centralGravity": 0.3,
-                "springLength": 150,
-                "springConstant": 0.04,
-                "damping": 0.09
-            },
-            "minVelocity": 0.75
-        },
-        "nodes": {
-            "font": {
-                "size": 14
-            }
-        },
-        "edges": {
-            "smooth": {
-                "type": "curvedCW",
-                "roundness": 0.2
-            },
-            "arrows": {
-                "to": {
+    # Different layout configurations
+    if layout == "hierarchical":
+        net.set_options("""
+        {
+            "layout": {
+                "hierarchical": {
                     "enabled": true,
-                    "scaleFactor": 0.5
+                    "levelSeparation": 150,
+                    "nodeSpacing": 200,
+                    "treeSpacing": 250,
+                    "direction": "UD",
+                    "sortMethod": "directed"
                 }
+            },
+            "physics": {
+                "enabled": false
+            },
+            "nodes": {
+                "font": {
+                    "size": 12,
+                    "face": "arial"
+                },
+                "borderWidth": 2
+            },
+            "edges": {
+                "smooth": {
+                    "type": "cubicBezier",
+                    "forceDirection": "vertical",
+                    "roundness": 0.4
+                },
+                "arrows": {
+                    "to": {
+                        "enabled": true,
+                        "scaleFactor": 0.5
+                    }
+                },
+                "color": {
+                    "color": "#848484",
+                    "highlight": "#FF0000",
+                    "opacity": 0.6
+                }
+            },
+            "interaction": {
+                "hover": true,
+                "tooltipDelay": 100,
+                "navigationButtons": true,
+                "keyboard": true
             }
         }
-    }
-    """)
+        """)
+    else:  # physics-based layout
+        net.set_options("""
+        {
+            "physics": {
+                "enabled": true,
+                "stabilization": {
+                    "enabled": true,
+                    "iterations": 500
+                },
+                "barnesHut": {
+                    "gravitationalConstant": -30000,
+                    "centralGravity": 0.8,
+                    "springLength": 250,
+                    "springConstant": 0.001,
+                    "damping": 0.3,
+                    "avoidOverlap": 0.8
+                }
+            },
+            "nodes": {
+                "font": {
+                    "size": 11,
+                    "face": "arial"
+                },
+                "borderWidth": 2
+            },
+            "edges": {
+                "smooth": {
+                    "type": "continuous"
+                },
+                "arrows": {
+                    "to": {
+                        "enabled": true,
+                        "scaleFactor": 0.5
+                    }
+                },
+                "color": {
+                    "color": "#848484",
+                    "opacity": 0.5
+                }
+            },
+            "interaction": {
+                "hover": true,
+                "tooltipDelay": 100,
+                "hideEdgesOnDrag": true,
+                "hideEdgesOnZoom": true,
+                "navigationButtons": true
+            }
+        }
+        """)
+    
+    # Calculate node levels/depths for sizing
+    node_depths = {}
+    node_set = set(nodes)
+    
+    # BFS to calculate depths
+    from collections import deque
+    q = deque([(seed_url, 0)])
+    visited_depth = {seed_url: 0}
+    
+    while q:
+        url, depth = q.popleft()
+        node_depths[url] = depth
+        for source, target in edges:
+            if source == url and target in node_set and target not in visited_depth:
+                visited_depth[target] = depth + 1
+                q.append((target, depth + 1))
     
     # Add nodes with colors based on status
     for url in nodes:
         status = status_by_url.get(url)
         label = get_url_label(url)
+        depth = node_depths.get(url, 0)
         
         # Color based on HTTP status
         if status == 200:
@@ -144,18 +228,21 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
         else:
             color = "#9E9E9E"  # Gray for unknown
         
-        title = f"{url}\nStatus: {status if status else 'N/A'}"
+        # Seed URL is larger
+        size = 35 if url == seed_url else max(15, 25 - depth * 2)
+        
+        title = f"{url}\nStatus: {status if status else 'N/A'}\nDepth: {depth}"
         
         net.add_node(
             url,
             label=label,
             title=title,
             color=color,
-            size=25
+            size=size,
+            level=depth if layout == "hierarchical" else None
         )
     
     # Add edges (only if both nodes exist)
-    node_set = set(nodes)
     for source, target in edges:
         if source in node_set and target in node_set:
             net.add_edge(source, target)
@@ -229,13 +316,15 @@ st.set_page_config(page_title="Website Flow Crawler", layout="wide")
 st.title("🕷️ Website Flow Crawler")
 st.caption("Enter a website → Crawl internal pages → Interactive network visualization")
 
-col1, col2, col3 = st.columns([2, 1, 1])
+col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
 with col1:
     seed = st.text_input("Seed URL", value="https://example.com")
 with col2:
     max_pages = st.number_input("Max pages", min_value=1, max_value=5000, value=200, step=50)
 with col3:
     max_depth = st.number_input("Max depth", min_value=0, max_value=20, value=3, step=1)
+with col4:
+    layout_type = st.selectbox("Layout", ["hierarchical", "physics"], index=0)
 
 run = st.button("🚀 Crawl & Build Network Graph", use_container_width=True)
 
@@ -300,10 +389,13 @@ if run:
     ⚪ Gray = Unknown
     """)
     
-    st.info("💡 **Tip:** Click and drag nodes to reorganize. Hover over nodes to see full URLs. Use mouse wheel to zoom.")
+    if layout_type == "hierarchical":
+        st.info("💡 **Hierarchical Layout:** Top-down tree structure. Pages flow from seed URL downward. No jiggling!")
+    else:
+        st.info("💡 **Physics Layout:** Force-directed graph. Click and drag nodes to reorganize. Graph will stabilize after a few seconds.")
     
     with st.spinner("Building network graph..."):
-        net = build_network_graph(nodes, edges_list, status_by_url)
+        net = build_network_graph(nodes, edges_list, status_by_url, seed, layout_type)
         render_network(net)
 
     # Show page list in expander
