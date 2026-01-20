@@ -154,9 +154,11 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
             size=25
         )
     
-    # Add edges
+    # Add edges (only if both nodes exist)
+    node_set = set(nodes)
     for source, target in edges:
-        net.add_edge(source, target)
+        if source in node_set and target in node_set:
+            net.add_edge(source, target)
     
     return net
 
