@@ -83,15 +83,26 @@ def get_url_label(url: str, max_length: int = 40) -> str:
     
     return label
 
-def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_by_url: dict, seed_url: str, layout: str = "force"):
+def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_by_url: dict, seed_url: str, layout: str = "force", show_labels: str = "all"):
     """Build an interactive network graph using pyvis"""
     net = Network(
-        height="800px",
+        height="900px",
         width="100%",
         bgcolor="#ffffff",
         font_color="#000000",
         directed=True
     )
+    
+    # Calculate node metrics first (for filtering)
+    node_set = set(nodes)
+    outgoing = {n: 0 for n in nodes}
+    incoming = {n: 0 for n in nodes}
+    
+    for source, target in edges:
+        if source in node_set:
+            outgoing[source] = outgoing.get(source, 0) + 1
+        if target in node_set:
+            incoming[target] = incoming.get(target, 0) + 1
     
     # Different layout configurations
     if layout == "radial":
@@ -102,24 +113,26 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
                 "enabled": true,
                 "stabilization": {
                     "enabled": true,
-                    "iterations": 1000,
+                    "iterations": 1500,
                     "updateInterval": 50
                 },
                 "barnesHut": {
-                    "gravitationalConstant": -10000,
-                    "centralGravity": 0.3,
-                    "springLength": 200,
-                    "springConstant": 0.05,
-                    "damping": 0.5,
-                    "avoidOverlap": 0.2
+                    "gravitationalConstant": -20000,
+                    "centralGravity": 0.15,
+                    "springLength": 250,
+                    "springConstant": 0.02,
+                    "damping": 0.6,
+                    "avoidOverlap": 0.4
                 }
             },
             "nodes": {
                 "font": {
-                    "size": 11,
-                    "face": "arial"
+                    "size": 16,
+                    "face": "Arial",
+                    "strokeWidth": 3,
+                    "strokeColor": "#ffffff"
                 },
-                "borderWidth": 2,
+                "borderWidth": 3,
                 "shape": "dot"
             },
             "edges": {
@@ -130,14 +143,14 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
                 "arrows": {
                     "to": {
                         "enabled": true,
-                        "scaleFactor": 0.4
+                        "scaleFactor": 0.3
                     }
                 },
                 "color": {
-                    "color": "#999999",
-                    "opacity": 0.3
+                    "color": "#e0e0e0",
+                    "opacity": 0.2
                 },
-                "width": 1
+                "width": 0.5
             },
             "interaction": {
                 "hover": true,
@@ -157,24 +170,26 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
                 "enabled": true,
                 "stabilization": {
                     "enabled": true,
-                    "iterations": 2000
+                    "iterations": 2500
                 },
                 "forceAtlas2Based": {
-                    "gravitationalConstant": -50,
-                    "centralGravity": 0.01,
-                    "springLength": 150,
-                    "springConstant": 0.08,
-                    "damping": 0.4,
-                    "avoidOverlap": 0.5
+                    "gravitationalConstant": -100,
+                    "centralGravity": 0.005,
+                    "springLength": 200,
+                    "springConstant": 0.05,
+                    "damping": 0.5,
+                    "avoidOverlap": 0.8
                 },
                 "solver": "forceAtlas2Based"
             },
             "nodes": {
                 "font": {
-                    "size": 10,
-                    "face": "arial"
+                    "size": 16,
+                    "face": "Arial",
+                    "strokeWidth": 4,
+                    "strokeColor": "#ffffff"
                 },
-                "borderWidth": 2,
+                "borderWidth": 3,
                 "shape": "dot"
             },
             "edges": {
@@ -184,12 +199,12 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
                 "arrows": {
                     "to": {
                         "enabled": true,
-                        "scaleFactor": 0.4
+                        "scaleFactor": 0.3
                     }
                 },
                 "color": {
-                    "color": "#cccccc",
-                    "opacity": 0.4
+                    "color": "#e0e0e0",
+                    "opacity": 0.15
                 },
                 "width": 0.5
             },
@@ -209,24 +224,26 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
                 "enabled": true,
                 "stabilization": {
                     "enabled": true,
-                    "iterations": 1500,
+                    "iterations": 2000,
                     "updateInterval": 25
                 },
                 "barnesHut": {
-                    "gravitationalConstant": -15000,
-                    "centralGravity": 0.1,
-                    "springLength": 180,
-                    "springConstant": 0.04,
-                    "damping": 0.4,
-                    "avoidOverlap": 0.3
+                    "gravitationalConstant": -25000,
+                    "centralGravity": 0.05,
+                    "springLength": 250,
+                    "springConstant": 0.02,
+                    "damping": 0.5,
+                    "avoidOverlap": 0.5
                 }
             },
             "nodes": {
                 "font": {
-                    "size": 10,
-                    "face": "arial"
+                    "size": 16,
+                    "face": "Arial",
+                    "strokeWidth": 4,
+                    "strokeColor": "#ffffff"
                 },
-                "borderWidth": 2,
+                "borderWidth": 3,
                 "shape": "dot"
             },
             "edges": {
@@ -236,14 +253,14 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
                 "arrows": {
                     "to": {
                         "enabled": true,
-                        "scaleFactor": 0.5
+                        "scaleFactor": 0.3
                     }
                 },
                 "color": {
-                    "color": "#999999",
-                    "opacity": 0.4
+                    "color": "#d0d0d0",
+                    "opacity": 0.2
                 },
-                "width": 1
+                "width": 0.5
             },
             "interaction": {
                 "hover": true,
@@ -253,19 +270,6 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
             }
         }
         """)
-    
-    # Calculate node metrics
-    node_set = set(nodes)
-    
-    # Count incoming and outgoing links for each node
-    outgoing = {n: 0 for n in nodes}
-    incoming = {n: 0 for n in nodes}
-    
-    for source, target in edges:
-        if source in node_set:
-            outgoing[source] = outgoing.get(source, 0) + 1
-        if target in node_set:
-            incoming[target] = incoming.get(target, 0) + 1
     
     # Calculate depth from seed (for coloring)
     node_depths = {}
@@ -284,11 +288,27 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
     # Add nodes with sizing based on importance (links)
     for url in nodes:
         status = status_by_url.get(url)
-        label = get_url_label(url, max_length=35)
         depth = node_depths.get(url, 0)
         
         # Calculate importance: total connections
         importance = incoming.get(url, 0) + outgoing.get(url, 0)
+        
+        # Decide if we should show label
+        is_seed = url == seed_url
+        is_important = importance >= 3  # Has 3+ connections
+        
+        if show_labels == "important":
+            show_this_label = is_seed or is_important
+        elif show_labels == "seed":
+            show_this_label = is_seed
+        else:  # "all"
+            show_this_label = True
+        
+        # Create label
+        if show_this_label:
+            label = get_url_label(url, max_length=30)
+        else:
+            label = ""  # No label, just dot
         
         # Color based on HTTP status
         if status == 200:
@@ -303,12 +323,12 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
             color = "#9E9E9E"  # Gray for unknown
         
         # Size based on importance - seed is largest, then by connection count
-        if url == seed_url:
-            size = 40
+        if is_seed:
+            size = 50
         else:
-            size = min(35, 15 + importance * 2)
+            size = min(40, 20 + importance * 3)
         
-        title = f"{url}\nStatus: {status if status else 'N/A'}\nDepth: {depth}\nLinks In: {incoming.get(url, 0)} | Out: {outgoing.get(url, 0)}"
+        title = f"📄 {url}\n━━━━━━━━━━━━━━━━━━\n✓ Status: {status if status else 'N/A'}\n📊 Depth: {depth}\n🔗 Links In: {incoming.get(url, 0)}\n🔗 Links Out: {outgoing.get(url, 0)}"
         
         net.add_node(
             url,
@@ -318,10 +338,10 @@ def build_network_graph(nodes: list[str], edges: list[tuple[str, str]], status_b
             size=size
         )
     
-    # Add edges with width based on importance
+    # Add edges
     for source, target in edges:
         if source in node_set and target in node_set:
-            net.add_edge(source, target, width=1)
+            net.add_edge(source, target)
     
     return net
 
@@ -392,7 +412,7 @@ st.set_page_config(page_title="Website Flow Crawler", layout="wide")
 st.title("🕷️ Website Flow Crawler")
 st.caption("Enter a website → Crawl internal pages → Interactive network visualization")
 
-col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1, 1])
 with col1:
     seed = st.text_input("Seed URL", value="https://example.com")
 with col2:
@@ -401,6 +421,8 @@ with col3:
     max_depth = st.number_input("Max depth", min_value=0, max_value=20, value=3, step=1)
 with col4:
     layout_type = st.selectbox("Layout", ["force", "radial", "clustered"], index=0)
+with col5:
+    label_mode = st.selectbox("Labels", ["important", "all", "seed"], index=0)
 
 run = st.button("🚀 Crawl & Build Network Graph", use_container_width=True)
 
@@ -463,17 +485,19 @@ if run:
     🔴 Red = Client Error (4xx) | 
     🟣 Purple = Server Error (5xx) | 
     ⚪ Gray = Unknown
+    
+    **Node Size** = Number of connections (bigger = more important)
     """)
     
     if layout_type == "force":
-        st.info("💡 **Force-Directed:** Balanced map view. Nodes with more connections are larger. Shows the actual web structure!")
+        st.info("💡 **Force-Directed:** Balanced map view. Pages naturally spread apart. Shows site structure clearly.")
     elif layout_type == "radial":
-        st.info("💡 **Radial Layout:** Seed URL in center, pages radiate outward. Great for seeing site depth at a glance.")
+        st.info("💡 **Radial Layout:** Seed URL in center, pages radiate outward. Great for seeing site depth.")
     else:
-        st.info("💡 **Clustered Layout:** Pages naturally group by similarity. Best for complex sites with many interconnections.")
+        st.info("💡 **Clustered Layout:** Pages group by similarity. Best for complex sites.")
     
     with st.spinner("Building network graph..."):
-        net = build_network_graph(nodes, edges_list, status_by_url, seed, layout_type)
+        net = build_network_graph(nodes, edges_list, status_by_url, seed, layout_type, label_mode)
         render_network(net)
 
     # Show page list in expander
